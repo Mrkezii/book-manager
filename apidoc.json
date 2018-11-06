@@ -1,5 +1,5 @@
 {
   "name": "Book - Manager",
   "version": "0.0.1",
-  "description": "API Documentation for Book manager"
+  "description": "API Documentation for managing e-Books in a library"
 }
