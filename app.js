@@ -12,7 +12,11 @@ const books = require("./routes/books");
 const app = express();
 
 // Create Redis Client
-let client = redis.createClient();
+let client = redis.createClient(
+  15901,
+  "redis-15901.c17.us-east-1-4.ec2.cloud.redislabs.com"
+  // password: "O3FEL2Jo3mvwBpzBcF0xFHaPH3OAO6pe"
+);
 
 client.on("connect", function() {
   console.log("Connected to Redis...");
