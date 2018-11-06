@@ -1,23 +1,25 @@
 const redis = require("redis");
 const client = redis.createClient();
+
 module.exports = {
   getAllBooks: function(req, res) {
     let allBooks = [];
     //get all books from the books-list
     client.lrange("books-list", 0, -1, function(err, obj) {
       if (!obj || obj.length === 0) {
-        res.send("No books have been added");
-      } else {
-        res.json(obj);
-        // iterate over each id to get book details from hash
-        obj.map(book => {
-          client.hgetall(book, function(err, reply) {
-            // console.log(reply);
-            allBooks.push(reply);
-            console.log(allBooks);
-          });
-        });
+        res.status(404).send("No books have been added");
       }
+      // iterate over each id to get book details from hash
+      const x = i => {
+        if (i == obj.length) {
+          return res.status(200).send(allBooks);
+        }
+        client.hgetall(obj[i], function(err, singleBook) {
+          allBooks.push(singleBook);
+          x(i + 1);
+        });
+      };
+      x(0);
     });
   },
   getIndividualBook: function(req, res) {
@@ -29,9 +31,8 @@ module.exports = {
         client.hgetall(req.params.bookId, function(err, obj) {
           if (!obj) {
             res.status(404).send("Sorry such book does not exist.");
-            console.log("Book Does not exist");
           } else {
-            res.send(obj);
+            res.status(200).send(obj);
           }
         });
       }
@@ -40,43 +41,47 @@ module.exports = {
   addNewBook: function(req, res) {
     // get book details from client
     let bookDetails = {
-      id: req.body.id,
       author: req.body.author,
       title: req.body.title,
       summary: req.body.summary
     };
-    //increas the book id by 1
+
+    //increase the book id by 1
     client.incr("bookId", function(err, bookId) {
-      client.HMSET(`book:${bookId}`, bookDetails, function(err, reply) {
+      bookDetails["id"] = bookId;
+      client.hmset(`${bookId}`, bookDetails, function(err, reply) {
         if (err) {
-          console.log("there is an error", err);
+          res.status(404).send(err);
         }
-        res.send(`Book:${bookId} added!`);
         // Push Book id to book list
-        client.LPUSH("books-list", `book:${bookId}`);
+        client.LPUSH("books-list", `${bookId}`);
+
+        return res.status(200).send(`Book-${bookId} added!`);
       });
     });
   },
   updateBook: function(req, res) {
     let bookDetails = {
-      id: req.body.id,
       author: req.body.author,
       title: req.body.title,
       summary: req.body.summary
     };
-    client.HMSET(req.params.bookId, bookDetails, function(err, reply) {
+    client.hmset(req.params.bookId, bookDetails, function(err, reply) {
       if (err) {
-        console.log("there is an error", err);
+        res.status(404).send(err);
       }
-      console.log(reply);
-      res.send("okss");
+      return res.status(200).send(`${req.params.bookId} updated successfully!`);
     });
   },
   deleteBook: function(req, res) {
     client.del(req.params.bookId, function(err, reply) {
-      console.log(reply);
       client.lrem("books-list", 1, req.params.bookId, function(err, reply) {
-        console.log(reply);
+        if (err) {
+          res.status(404).send(err);
+        }
+        return res
+          .status(200)
+          .send(`${req.params.bookId} deleted successfully!`);
       });
     });
   }
