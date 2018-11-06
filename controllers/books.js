@@ -7,12 +7,12 @@ module.exports = {
     //get all books from the books-list
     client.lrange("books-list", 0, -1, function(err, obj) {
       if (!obj || obj.length === 0) {
-        res.status(404).send("No books have been added");
+        res.status(404).send({ error: "No books have been added" });
       }
       // iterate over each id to get book details from hash
       const x = i => {
         if (i == obj.length) {
-          return res.status(200).send(allBooks);
+          return res.status(200).send({ data: allBooks });
         }
         client.hgetall(obj[i], function(err, singleBook) {
           allBooks.push(singleBook);
@@ -26,13 +26,13 @@ module.exports = {
     client.lrange("books-list", 0, -1, function(err, obj) {
       const doesBookExist = obj.includes(req.params.bookId);
       if (!doesBookExist) {
-        res.status(404).send("Book Does not exist");
+        res.status(404).send({ error: "Book Does not exist" });
       } else {
         client.hgetall(req.params.bookId, function(err, obj) {
           if (!obj) {
             res.status(404).send("Sorry such book does not exist.");
           } else {
-            res.status(200).send(obj);
+            res.status(200).send({ data: obj });
           }
         });
       }
@@ -51,12 +51,12 @@ module.exports = {
       bookDetails["id"] = bookId;
       client.hmset(`${bookId}`, bookDetails, function(err, reply) {
         if (err) {
-          res.status(404).send(err);
+          res.status(404).send({ error: err.message });
         }
         // Push Book id to book list
         client.LPUSH("books-list", `${bookId}`);
 
-        return res.status(200).send(`Book-${bookId} added!`);
+        return res.status(200).send({ msg: `Book-${bookId} added!` });
       });
     });
   },
@@ -68,20 +68,22 @@ module.exports = {
     };
     client.hmset(req.params.bookId, bookDetails, function(err, reply) {
       if (err) {
-        res.status(404).send(err);
+        res.status(404).send({ error: err.message });
       }
-      return res.status(200).send(`${req.params.bookId} updated successfully!`);
+      return res
+        .status(200)
+        .send({ msg: `${req.params.bookId} updated successfully!` });
     });
   },
   deleteBook: function(req, res) {
     client.del(req.params.bookId, function(err, reply) {
       client.lrem("books-list", 1, req.params.bookId, function(err, reply) {
         if (err) {
-          res.status(404).send(err);
+          res.status(404).send({ error: err.message });
         }
         return res
           .status(200)
-          .send(`${req.params.bookId} deleted successfully!`);
+          .send({ msg: `${req.params.bookId} deleted successfully!` });
       });
     });
   }
