@@ -4,7 +4,7 @@ const path = require("path");
 
 /* GET home page. */
 router.get("/", function(req, res, next) {
-  res.render("index", { title: " Books API" });
+  res.render("index", { title: " Book-Manager API" });
 });
 
 module.exports = router;
