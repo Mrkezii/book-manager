@@ -1,6 +1,14 @@
 const redis = require("redis");
-const client = redis.createClient();
+// Create Redis Client
+let client = redis.createClient(
+  15901,
+  "redis-15901.c17.us-east-1-4.ec2.cloud.redislabs.com"
+);
+client.auth("O3FEL2Jo3mvwBpzBcF0xFHaPH3OAO6pe");
 
+client.on("connect", function() {
+  console.log("Connected to Redis...");
+});
 module.exports = {
   getAllBooks: function(req, res) {
     let allBooks = [];
